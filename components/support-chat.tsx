@@ -16,14 +16,16 @@ import {
   AlertCircle,
   FileText,
   Paperclip,
+  ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
 
 interface SupportChatProps {
   ticketId: string;
+  onBack?: () => void;
 }
 
-export function SupportChat({ ticketId }: SupportChatProps) {
+export function SupportChat({ ticketId, onBack }: SupportChatProps) {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -138,16 +140,29 @@ export function SupportChat({ ticketId }: SupportChatProps) {
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-green to-transparent" />
         
         {/* Header */}
-        <div className="border-b border-border px-5 py-4 flex-shrink-0">
-          <div className="flex justify-center mb-4">
-            <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/d5598bf3-9085-4c31-924a-08016435a769-85ZnfnTIg2ZJhpDbVhWczVcAoy7S2s.png"
-              alt="RECASH Logo"
-              width={140}
-              height={46}
-              className="h-9 w-auto"
-            />
-          </div>
+<div className="border-b border-border px-5 py-4 flex-shrink-0">
+
+  <div className="relative flex items-center justify-center mb-4">
+
+    {onBack && (
+      <button
+        onClick={onBack}
+        className="absolute left-0 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Volver
+      </button>
+    )}
+
+    <Image
+      src="/Logo(510x200).png"
+      alt="RECASH Logo"
+      width={140}
+      height={50}
+      className="h-15 w-auto"
+    />
+
+  </div>
           
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">

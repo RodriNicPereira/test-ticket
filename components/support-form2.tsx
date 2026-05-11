@@ -23,6 +23,7 @@ import {
   Plus,
   MessageSquare,
   Clock,
+   ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
 import { SupportChat } from "./support-chat";
@@ -42,7 +43,7 @@ const ALLOWED_TYPES = [
 type Step = "list" | "category" | "form" | "chat";
 
 const LOGO_URL =
-  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/d5598bf3-9085-4c31-924a-08016435a769-85ZnfnTIg2ZJhpDbVhWczVcAoy7S2s.png";
+  "/Logo(510x200).png";
 
 export function SupportForm() {
   const [step, setStep] = useState<Step>("category");
@@ -198,7 +199,7 @@ export function SupportForm() {
       <div className="min-h-screen flex flex-col">
         <header className="flex flex-col items-center pt-12 pb-8 px-5 text-center">
           <div className="mb-7">
-            <Image src={LOGO_URL} alt="RECASH Logo" width={180} height={60} className="h-11 w-auto" />
+            <Image src={LOGO_URL} alt="RECASH Logo" width={180} height={60} className="h-23 w-auto" />
           </div>
           <div className="inline-flex items-center gap-1.5 bg-[rgba(240,180,41,0.1)] border border-[rgba(240,180,41,0.25)] rounded-full px-3.5 py-1.5 text-[11px] font-semibold text-gold tracking-wider uppercase mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse-green" />
