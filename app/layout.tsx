@@ -1,14 +1,23 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Sora, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const sora = Sora({ 
+  subsets: ["latin"],
+  variable: '--font-sora',
+  weight: ['300', '400', '500', '600', '700']
+});
+const jetbrainsMono = JetBrains_Mono({ 
+  subsets: ["latin"],
+  variable: '--font-mono',
+  weight: ['400', '500']
+});
 
 export const metadata: Metadata = {
-  title: 'Soporte Técnico',
-  description: 'Sistema de tickets de soporte técnico',
+  title: 'Soporte Técnico — RECASH',
+  description: 'Centro de soporte técnico RECASH',
+  generator: 'v0.app',
   icons: {
     icon: [
       {
@@ -34,8 +43,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="bg-background">
-      <body className="font-sans antialiased">
+    <html lang="es" className={`${sora.variable} ${jetbrainsMono.variable} bg-background`}>
+      <body className="font-sans antialiased min-h-screen">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

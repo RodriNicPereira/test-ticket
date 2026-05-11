@@ -1,16 +1,28 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { saveTicket, CATEGORIAS, getActiveTicket, type Attachment, getTickets } from "@/lib/tickets";
-import { 
-  Send, 
-  Upload, 
-  X, 
-  FileText, 
-  ImageIcon, 
-  ChevronRight, 
+import {
+  saveTicket,
+  CATEGORIAS,
+  getActiveTickets,
+  setActiveTicket,
+  getStatusLabel,
+  getStatusColor,
+  type Attachment,
+  type Ticket,
+} from "@/lib/tickets";
+import {
+  Send,
+  Upload,
+  X,
+  FileText,
+  ImageIcon,
+  ChevronRight,
   ChevronLeft,
-  CheckCircle2
+  CheckCircle2,
+  Plus,
+  MessageSquare,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
 import { SupportChat } from "./support-chat";
@@ -18,19 +30,23 @@ import { SupportChat } from "./support-chat";
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = [
-  "image/jpeg", 
-  "image/png", 
-  "image/gif", 
-  "image/webp", 
-  "application/pdf", 
-  "application/msword", 
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
 type Step = "list" | "category" | "form" | "chat";
 
+const LOGO_URL =
+  "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/d5598bf3-9085-4c31-924a-08016435a769-85ZnfnTIg2ZJhpDbVhWczVcAoy7S2s.png";
+
 export function SupportForm() {
   const [step, setStep] = useState<Step>("category");
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedCategoria, setSelectedCategoria] = useState("");
   const [selectedSubcategoria, setSelectedSubcategoria] = useState("");
   const [formData, setFormData] = useState({
@@ -46,12 +62,18 @@ export function SupportForm() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Decidir paso inicial: si hay tickets activos => lista, si no => crear nuevo
   useEffect(() => {
-    const tickets = getTickets();
-    if (tickets.length > 0) {
-      setStep("list");
-    }
+    const list = getActiveTickets();
+    setTickets(list);
+    setStep(list.length > 0 ? "list" : "category");
   }, []);
+
+  const refreshTickets = () => {
+    const list = getActiveTickets();
+    setTickets(list);
+    return list;
+  };
 
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -83,12 +105,10 @@ export function SupportForm() {
     setDragActive(false);
     handleFiles(e.dataTransfer.files);
   };
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(true);
   };
-
   const handleDragLeave = () => setDragActive(false);
 
   const removeAttachment = (index: number) => {
@@ -108,10 +128,8 @@ export function SupportForm() {
   };
 
   const toggleCategory = (categoria: string) => {
-    setExpandedCategories(prev => 
-      prev.includes(categoria) 
-        ? prev.filter(c => c !== categoria)
-        : [...prev, categoria]
+    setExpandedCategories((prev) =>
+      prev.includes(categoria) ? prev.filter((c) => c !== categoria) : [...prev, categoria]
     );
   };
 
@@ -128,29 +146,151 @@ export function SupportForm() {
     });
     setActiveTicketId(ticket.id);
     setIsSubmitting(false);
+    refreshTickets();
+    // Reset form para futuras creaciones
+    setFormData({ mail: "", titular: "", grupo: "", detalle: "" });
+    setAttachments([]);
     setStep("chat");
   };
 
   const handleBackToCategory = () => {
     setSelectedCategoria("");
     setSelectedSubcategoria("");
+    // Si tiene tickets, volver a la lista; si no, al selector
+    const list = refreshTickets();
+    setStep(list.length > 0 ? "list" : "category");
+  };
+
+  const handleNewTicket = () => {
+    setSelectedCategoria("");
+    setSelectedSubcategoria("");
+    setExpandedCategories([]);
     setStep("category");
   };
 
-  // Step 1: Category Selection
-  if (step === "category") {
+  const handleOpenTicket = (ticket: Ticket) => {
+    setActiveTicket(ticket.id);
+    setActiveTicketId(ticket.id);
+    setStep("chat");
+  };
+
+  const handleBackToList = () => {
+    const list = refreshTickets();
+    setActiveTicketId(null);
+    setActiveTicket(null);
+    setStep(list.length > 0 ? "list" : "category");
+  };
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Step 0: Lista de tickets
+  if (step === "list") {
     return (
       <div className="min-h-screen flex flex-col">
-        {/* Header */}
         <header className="flex flex-col items-center pt-12 pb-8 px-5 text-center">
           <div className="mb-7">
-            <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/d5598bf3-9085-4c31-924a-08016435a769-85ZnfnTIg2ZJhpDbVhWczVcAoy7S2s.png"
-              alt="RECASH Logo"
-              width={180}
-              height={60}
-              className="h-11 w-auto"
-            />
+            <Image src={LOGO_URL} alt="RECASH Logo" width={180} height={60} className="h-11 w-auto" />
+          </div>
+          <div className="inline-flex items-center gap-1.5 bg-[rgba(240,180,41,0.1)] border border-[rgba(240,180,41,0.25)] rounded-full px-3.5 py-1.5 text-[11px] font-semibold text-gold tracking-wider uppercase mb-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse-green" />
+            Tus tickets
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-br from-gold-light via-gold to-[#C8881A] bg-clip-text text-transparent">
+            Mis tickets de soporte
+          </h1>
+          <p className="text-[15px] text-muted-foreground max-w-[420px] leading-relaxed">
+            Continuá la conversación de un ticket existente o creá uno nuevo.
+          </p>
+        </header>
+
+        <main className="flex justify-center px-5 pb-20">
+          <div className="w-full max-w-[600px] bg-surface border border-border rounded-[20px] p-7 shadow-[0_32px_80px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-green to-transparent" />
+
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-[10px] font-bold tracking-widest uppercase text-gold">
+                  {tickets.length} {tickets.length === 1 ? "ticket activo" : "tickets activos"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Tocá uno para abrir el chat</p>
+              </div>
+              <button
+                onClick={handleNewTicket}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-br from-gold to-[#C8881A] rounded-lg text-sm font-bold text-black hover:opacity-90 hover:-translate-y-px active:translate-y-0 transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                Nuevo ticket
+              </button>
+            </div>
+
+            <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1">
+              {tickets.map((ticket) => {
+                const lastReply = ticket.replies[ticket.replies.length - 1];
+                const preview = lastReply?.content || ticket.detalle;
+                return (
+                  <button
+                    key={ticket.id}
+                    onClick={() => handleOpenTicket(ticket)}
+                    className="w-full text-left bg-surface-2 border border-border-2 hover:border-gold-dim hover:bg-[#161616] rounded-lg p-4 transition-all group"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-foreground truncate">
+                          {ticket.subcategoria}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground truncate">{ticket.categoria}</p>
+                      </div>
+                      <span
+                        className={`shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full border ${getStatusColor(
+                          ticket.status
+                        )}`}
+                      >
+                        {getStatusLabel(ticket.status)}
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-muted-foreground line-clamp-2 leading-relaxed mb-3">
+                      {preview}
+                    </p>
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {formatDate(ticket.updatedAt)}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-gold opacity-70 group-hover:opacity-100 transition-opacity">
+                        <MessageSquare className="h-3 w-3" />
+                        {ticket.replies.length} {ticket.replies.length === 1 ? "mensaje" : "mensajes"}
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </main>
+
+        <footer className="text-center py-6 text-xs text-[#444]">© 2026 Recash</footer>
+      </div>
+    );
+  }
+
+  // Step 1: Category Selection
+  if (step === "category") {
+    const hasTickets = tickets.length > 0;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <header className="flex flex-col items-center pt-12 pb-8 px-5 text-center">
+          <div className="mb-7">
+            <Image src={LOGO_URL} alt="RECASH Logo" width={180} height={60} className="h-11 w-auto" />
           </div>
           <div className="inline-flex items-center gap-1.5 bg-[rgba(240,180,41,0.1)] border border-[rgba(240,180,41,0.25)] rounded-full px-3.5 py-1.5 text-[11px] font-semibold text-gold tracking-wider uppercase mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse-green" />
@@ -164,12 +304,20 @@ export function SupportForm() {
           </p>
         </header>
 
-        {/* Main Card */}
         <main className="flex justify-center px-5 pb-20">
           <div className="w-full max-w-[600px] bg-surface border border-border rounded-[20px] p-8 shadow-[0_32px_80px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)] relative overflow-hidden">
-            {/* Top gradient line */}
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-green to-transparent" />
-            
+
+            {hasTickets && (
+              <button
+                onClick={() => setStep("list")}
+                className="inline-flex items-center gap-1.5 mb-5 text-xs text-muted-foreground hover:text-gold transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Volver a mis tickets
+              </button>
+            )}
+
             <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
               {Object.entries(CATEGORIAS).map(([categoria, subcategorias]) => {
                 const isExpanded = expandedCategories.includes(categoria);
@@ -180,7 +328,11 @@ export function SupportForm() {
                       className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-3 transition-colors"
                     >
                       <span className="font-semibold text-[14px] text-foreground">{categoria}</span>
-                      <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                      <ChevronRight
+                        className={`h-4 w-4 text-muted-foreground transition-transform ${
+                          isExpanded ? "rotate-90" : ""
+                        }`}
+                      />
                     </button>
                     {isExpanded && (
                       <div className="border-t border-border divide-y divide-border">
@@ -203,9 +355,7 @@ export function SupportForm() {
           </div>
         </main>
 
-        <footer className="text-center py-6 text-xs text-[#444]">
-          © 2026 Recash
-        </footer>
+        <footer className="text-center py-6 text-xs text-[#444]">© 2026 Recash</footer>
       </div>
     );
   }
@@ -216,13 +366,7 @@ export function SupportForm() {
       <div className="min-h-screen flex flex-col">
         <header className="flex flex-col items-center pt-12 pb-6 px-5 text-center">
           <div className="mb-6">
-            <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/d5598bf3-9085-4c31-924a-08016435a769-85ZnfnTIg2ZJhpDbVhWczVcAoy7S2s.png"
-              alt="RECASH Logo"
-              width={180}
-              height={60}
-              className="h-11 w-auto"
-            />
+            <Image src={LOGO_URL} alt="RECASH Logo" width={180} height={60} className="h-11 w-auto" />
           </div>
           <div className="inline-flex items-center gap-1.5 bg-[rgba(240,180,41,0.1)] border border-[rgba(240,180,41,0.25)] rounded-full px-3.5 py-1.5 text-[11px] font-semibold text-gold tracking-wider uppercase mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse-green" />
@@ -240,24 +384,27 @@ export function SupportForm() {
           <div className="w-full max-w-[600px] bg-surface border border-border rounded-[20px] p-9 shadow-[0_32px_80px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)] relative overflow-hidden animate-fade-in">
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-green to-transparent" />
 
-            {/* Step indicator */}
             <div className="flex items-center gap-2 mb-7">
               <div className="w-7 h-7 rounded-full bg-green flex items-center justify-center text-xs font-semibold text-black">
                 <CheckCircle2 className="h-4 w-4" />
               </div>
               <div className="flex-1 h-px bg-gold-dim" />
-              <div className="w-7 h-7 rounded-full bg-gold flex items-center justify-center text-xs font-semibold text-black">2</div>
+              <div className="w-7 h-7 rounded-full bg-gold flex items-center justify-center text-xs font-semibold text-black">
+                2
+              </div>
               <div className="flex-1 h-px bg-border" />
-              <div className="w-7 h-7 rounded-full bg-surface-3 border border-border-2 flex items-center justify-center text-xs font-semibold text-muted-foreground">3</div>
+              <div className="w-7 h-7 rounded-full bg-surface-3 border border-border-2 flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                3
+              </div>
             </div>
 
-            {/* Section label */}
             <div className="flex items-center gap-2 mb-5">
-              <span className="text-[10px] font-bold tracking-widest uppercase text-gold">Paso 2 — Datos de tu cuenta</span>
+              <span className="text-[10px] font-bold tracking-widest uppercase text-gold">
+                Paso 2 — Datos de tu cuenta
+              </span>
               <div className="flex-1 h-px bg-gradient-to-r from-gold-dim to-transparent" />
             </div>
 
-            {/* Selected problem */}
             <div className="bg-[rgba(240,180,41,0.06)] border border-[rgba(240,180,41,0.18)] rounded-lg p-3.5 mb-5">
               <p className="text-xs text-[#C8AA6E] mb-1">Problema seleccionado:</p>
               <p className="text-sm font-semibold text-gold">{selectedCategoria}</p>
@@ -265,7 +412,6 @@ export function SupportForm() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Two column grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="flex items-center gap-1.5 text-[13px] font-medium text-[#C8C4BC] mb-2">
@@ -323,17 +469,21 @@ export function SupportForm() {
                 />
               </div>
 
-              {/* File upload */}
               <div>
                 <label className="flex items-center gap-1.5 text-[13px] font-medium text-[#C8C4BC] mb-2">
-                  Capturas / comprobantes <span className="text-muted-foreground font-normal text-[11px]">(opcional)</span>
+                  Capturas / comprobantes{" "}
+                  <span className="text-muted-foreground font-normal text-[11px]">(opcional)</span>
                 </label>
                 <div className="bg-[rgba(240,180,41,0.06)] border border-[rgba(240,180,41,0.18)] rounded-lg p-3.5 text-xs text-[#C8AA6E] leading-relaxed mb-3">
-                  <strong className="text-gold">Tip:</strong> Las capturas que incluyan <strong>ID de operación, COELSA ID, titular y monto</strong> agilizan mucho la resolución.
+                  <strong className="text-gold">Tip:</strong> Las capturas que incluyan{" "}
+                  <strong>ID de operación, COELSA ID, titular y monto</strong> agilizan mucho la
+                  resolución.
                 </div>
                 <div
                   className={`border-[1.5px] border-dashed rounded-lg p-7 text-center cursor-pointer transition-all bg-surface-2 ${
-                    dragActive ? "border-gold bg-[rgba(240,180,41,0.05)]" : "border-border-2 hover:border-gold-dim hover:bg-[#161616]"
+                    dragActive
+                      ? "border-gold bg-[rgba(240,180,41,0.05)]"
+                      : "border-border-2 hover:border-gold-dim hover:bg-[#161616]"
                   }`}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
@@ -351,8 +501,12 @@ export function SupportForm() {
                   <div className="w-10 h-10 border border-border-2 rounded-lg flex items-center justify-center mx-auto mb-2.5 bg-surface-3">
                     <Upload className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <p className="text-sm font-medium text-[#C8C4BC] mb-1">Hacé clic o arrastrá archivos aquí</p>
-                  <p className="text-[11px] text-muted-foreground">Imágenes, PDF, DOC — hasta {MAX_FILES} archivos, 10 MB c/u</p>
+                  <p className="text-sm font-medium text-[#C8C4BC] mb-1">
+                    Hacé clic o arrastrá archivos aquí
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Imágenes, PDF, DOC — hasta {MAX_FILES} archivos, 10 MB c/u
+                  </p>
                 </div>
 
                 {attachments.length > 0 && (
@@ -361,7 +515,11 @@ export function SupportForm() {
                       <div key={index} className="relative">
                         {file.type.startsWith("image/") ? (
                           <div className="relative">
-                            <img src={file.dataUrl} alt={file.name} className="w-20 h-16 object-cover rounded-lg border border-border-2" />
+                            <img
+                              src={file.dataUrl}
+                              alt={file.name}
+                              className="w-20 h-16 object-cover rounded-lg border border-border-2"
+                            />
                             <button
                               type="button"
                               onClick={() => removeAttachment(index)}
@@ -389,7 +547,6 @@ export function SupportForm() {
                 )}
               </div>
 
-              {/* Navigation */}
               <div className="flex items-center gap-3 pt-3">
                 <button
                   type="button"
@@ -421,16 +578,14 @@ export function SupportForm() {
           </div>
         </main>
 
-        <footer className="text-center py-6 text-xs text-[#444]">
-          © 2026 Recash
-        </footer>
+        <footer className="text-center py-6 text-xs text-[#444]">© 2026 Recash</footer>
       </div>
     );
   }
 
   // Step 3: Chat
   if (step === "chat" && activeTicketId) {
-    return <SupportChat ticketId={activeTicketId} />;
+    return <SupportChat ticketId={activeTicketId} onBack={handleBackToList} />;
   }
 
   return null;

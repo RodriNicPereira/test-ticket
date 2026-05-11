@@ -1,25 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
 import { validateAdmin, setAdminAuthed } from "@/lib/tickets";
-import { MessageSquare, LogIn } from "lucide-react";
+import Image from "next/image";
 
 interface AdminLoginProps {
   onLogin: () => void;
 }
 
 export function AdminLogin({ onLogin }: AdminLoginProps) {
-  const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateAdmin(user, pass)) {
+    if (validateAdmin("admin", pass)) {
       setAdminAuthed(true);
       onLogin();
     } else {
@@ -28,72 +23,51 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-100 p-5">
-      <Card className="w-full max-w-[360px] border-zinc-200 shadow-sm">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 bg-zinc-900 rounded-xl p-3 w-fit">
-            <MessageSquare className="h-6 w-6 text-white" />
-          </div>
-          <CardTitle className="text-xl text-zinc-900">Panel de soporte</CardTitle>
-          <CardDescription className="text-zinc-500">
-            Ingresá tus credenciales de administrador para continuar
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="user" className="text-zinc-900 font-medium text-sm">
-                  Usuario
-                </FieldLabel>
-                <Input
-                  id="user"
-                  type="text"
-                  placeholder="admin"
-                  value={user}
-                  onChange={(e) => {
-                    setUser(e.target.value);
-                    setError(false);
-                  }}
-                  className="border-zinc-200 focus:border-zinc-400"
-                  autoComplete="username"
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="pass" className="text-zinc-900 font-medium text-sm">
-                  Contraseña
-                </FieldLabel>
-                <Input
-                  id="pass"
-                  type="password"
-                  placeholder="••••••••"
-                  value={pass}
-                  onChange={(e) => {
-                    setPass(e.target.value);
-                    setError(false);
-                  }}
-                  className="border-zinc-200 focus:border-zinc-400"
-                  autoComplete="current-password"
-                />
-              </Field>
-            </FieldGroup>
+    <div className="min-h-screen flex items-center justify-center p-5" style={{
+      backgroundImage: "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(240,180,41,.07) 0%, transparent 70%)"
+    }}>
+      <div className="w-full max-w-[380px] bg-surface border border-border-2 rounded-[20px] px-10 py-11 text-center relative overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.6)]">
+        {/* Top gradient line */}
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-green to-transparent" />
+        
+        <div className="mb-8">
+          <Image
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/d5598bf3-9085-4c31-924a-08016435a769-85ZnfnTIg2ZJhpDbVhWczVcAoy7S2s.png"
+            alt="RECASH Logo"
+            width={160}
+            height={53}
+            className="h-10 w-auto mx-auto mb-2"
+          />
+          <p className="text-[13px] text-muted-foreground">Panel de soporte — solo agentes</p>
+        </div>
 
-            {error && (
-              <p className="text-sm text-red-600 text-center">
-                Usuario o contraseña incorrectos
-              </p>
-            )}
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="password"
+            placeholder="Contraseña de acceso"
+            value={pass}
+            onChange={(e) => {
+              setPass(e.target.value);
+              setError(false);
+            }}
+            className="w-full px-3.5 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
+            autoComplete="current-password"
+          />
 
-            <Button
-              type="submit"
-              className="w-full bg-zinc-900 hover:bg-zinc-800 text-white"
-            >
-              <LogIn className="mr-2 h-4 w-4" />
-              Ingresar
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <button
+            type="submit"
+            className="w-full py-3.5 bg-gradient-to-br from-gold to-[#C8881A] border-none rounded-lg text-sm font-bold text-black cursor-pointer hover:opacity-90 transition-all"
+          >
+            Ingresar al panel
+          </button>
+        </form>
+
+        {error && (
+          <p className="text-[13px] text-destructive mt-3">
+            Contraseña incorrecta
+          </p>
+        )}
+      </div>
     </div>
   );
 }
