@@ -88,7 +88,7 @@ export async function closeTicket(ticketId: string) {
 export async function uploadFile(file: File): Promise<Omit<Attachment, 'id'>> {
   const fd = new FormData();
   fd.append('file', file);
-  const r = await fetch('/api/upload', { method: 'POST', body: fd });
+  const r = await fetch('/api/upload', { method: 'POST', credentials: 'include', body: fd });
   if (!r.ok) throw new Error('Error al subir');
   return r.json();
 }

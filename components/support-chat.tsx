@@ -36,6 +36,7 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
   const loadTicket = async () => {
@@ -96,6 +97,8 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
     setIsSending(false);
   }
 };
+
+
 
 useTicketChannel(ticketId, async () => {
   const updated = await getTicket(ticketId);

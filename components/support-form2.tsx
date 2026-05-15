@@ -61,7 +61,24 @@ export function SupportForm() {
   const [dragActive, setDragActive] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+const [mailSuggestions, setMailSuggestions] = useState<string[]>([]);
+const [titularSuggestions, setTitularSuggestions] = useState<string[]>([]);
+const [grupoSuggestions, setGrupoSuggestions] = useState<string[]>([]);
+const [showGrupoSuggestions, setShowGrupoSuggestions] = useState(false);
+const [showMailSuggestions, setShowMailSuggestions] = useState(false);
+const [showTitularSuggestions, setShowTitularSuggestions] = useState(false);
 
+const filteredMailSuggestions = mailSuggestions.filter((mail) =>
+  mail.toLowerCase().includes(formData.mail.toLowerCase())
+);
+
+const filteredTitularSuggestions = titularSuggestions.filter((titular) =>
+  titular.toLowerCase().includes(formData.titular.toLowerCase())
+);
+
+const filteredGrupoSuggestions = grupoSuggestions.filter((grupo) =>
+  grupo.toLowerCase().includes(formData.grupo.toLowerCase())
+);
 
 useEffect(() => {
   async function loadTickets() {
@@ -75,6 +92,48 @@ useEffect(() => {
 
   loadTickets();
 }, []);
+
+useEffect(() => {
+  setMailSuggestions(
+    JSON.parse(localStorage.getItem('ticket_mail') || '[]')
+  );
+
+  setTitularSuggestions(
+    JSON.parse(localStorage.getItem('ticket_titular') || '[]')
+  );
+
+  setGrupoSuggestions(
+    JSON.parse(localStorage.getItem('ticket_grupo') || '[]')
+  );
+}, []);
+
+const saveSuggestion = (
+  key: string,
+  value: string
+) => {
+  if (!value.trim()) return;
+
+  const existing = JSON.parse(
+    localStorage.getItem(key) || '[]'
+  );
+
+  const updated = [
+    value,
+    ...existing.filter((v: string) => v !== value)
+  ];
+
+  localStorage.setItem(
+    key,
+    JSON.stringify(updated.slice(0, 10))
+  );
+};
+
+const saveDataLocalStorage = () => {
+  saveSuggestion('ticket_mail', formData.mail);
+  saveSuggestion('ticket_titular', formData.titular);
+  saveSuggestion('ticket_grupo', formData.grupo);
+};
+
 
  const refreshTickets = async () => {
   const list = await getActiveTickets();
@@ -157,12 +216,13 @@ useEffect(() => {
     setActiveTicketId(ticket.id);
     setIsSubmitting(false);
     refreshTickets();
+    saveDataLocalStorage();
     // Reset form para futuras creaciones
     setFormData({ mail: "", titular: "", grupo: "", detalle: "" });
     setAttachments([]);
     setStep("chat");
   };
-
+  
   const handleBackToCategory = async () => {
     setSelectedCategoria("");
     setSelectedSubcategoria("");
@@ -426,26 +486,86 @@ useEffect(() => {
                     Mail oficial de la cuenta <span className="text-gold">*</span>
                   </label>
                   <input
-                    type="email"
-                    placeholder="tu@email.com"
-                    value={formData.mail}
-                    onChange={(e) => setFormData({ ...formData, mail: e.target.value })}
-                    className="w-full px-3.5 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:bg-[#161616] focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
-                    required
-                  />
+    type="email"
+    placeholder="tu@email.com"
+    value={formData.mail}
+    onFocus={() => setShowMailSuggestions(true)}
+    onBlur={() => {
+      setTimeout(() => {
+        setShowMailSuggestions(false);
+      }, 150);
+    }}
+    onChange={(e) => {
+      setFormData({ ...formData, mail: e.target.value });
+      setShowMailSuggestions(true);
+    }}
+    className="w-full px-3.5 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:bg-[#161616] focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
+    required
+  />
+
+  {showMailSuggestions &&
+    formData.mail &&
+    filteredMailSuggestions.length > 0 && (
+      <div className="absolute z-50 mt-1 w-full bg-surface-2 border border-border rounded-lg overflow-hidden shadow-lg">
+        {filteredMailSuggestions.map((mail) => (
+          <button
+            key={mail}
+            type="button"
+            onMouseDown={() => {
+              setFormData({ ...formData, mail });
+              setShowMailSuggestions(false);
+            }}
+            className="w-full text-left px-3 py-2 text-sm hover:bg-surface-3"
+          >
+            {mail}
+          </button>
+        ))}
+      </div>
+    )}
+
+
                 </div>
                 <div>
                   <label className="flex items-center gap-1.5 text-[13px] font-medium text-[#C8C4BC] mb-2">
                     Titular de la cuenta <span className="text-gold">*</span>
                   </label>
                   <input
-                    type="text"
-                    placeholder="Nombre y apellido"
-                    value={formData.titular}
-                    onChange={(e) => setFormData({ ...formData, titular: e.target.value })}
-                    className="w-full px-3.5 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:bg-[#161616] focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
-                    required
-                  />
+    type="text"
+    placeholder="Nombre del titular"
+    value={formData.titular}
+    onFocus={() => setShowTitularSuggestions(true)}
+    onBlur={() => {
+      setTimeout(() => {
+        setShowTitularSuggestions(false);
+      }, 150);
+    }}
+    onChange={(e) => {
+      setFormData({ ...formData, titular: e.target.value });
+      setShowTitularSuggestions(true);
+    }}
+    className="w-full px-3.5 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:bg-[#161616] focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
+    required
+  />
+
+  {showTitularSuggestions &&
+    formData.titular &&
+    filteredTitularSuggestions.length > 0 && (
+      <div className="absolute z-50 mt-1 w-full bg-surface-2 border border-border rounded-lg overflow-hidden shadow-lg">
+        {filteredTitularSuggestions.map((titular) => (
+          <button
+            key={titular}
+            type="button"
+            onMouseDown={() => {
+              setFormData({ ...formData, titular });
+              setShowTitularSuggestions(false);
+            }}
+            className="w-full text-left px-3 py-2 text-sm hover:bg-surface-3"
+          >
+            {titular}
+          </button>
+        ))}
+      </div>
+    )}
                 </div>
               </div>
 
@@ -454,13 +574,42 @@ useEffect(() => {
                   Grupo de Signal asignado <span className="text-gold">*</span>
                 </label>
                 <input
-                  type="text"
-                  placeholder="Nombre del grupo"
-                  value={formData.grupo}
-                  onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
-                  className="w-full px-3.5 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:bg-[#161616] focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
-                  required
-                />
+    type="text"
+    placeholder="Nombre del grupo"
+    value={formData.grupo}
+    onFocus={() => setShowGrupoSuggestions(true)}
+    onBlur={() => {
+      setTimeout(() => {
+        setShowGrupoSuggestions(false);
+      }, 150);
+    }}
+    onChange={(e) => {
+      setFormData({ ...formData, grupo: e.target.value });
+      setShowGrupoSuggestions(true);
+    }}
+    className="w-full px-3.5 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:bg-[#161616] focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
+    required
+  />
+
+  {showGrupoSuggestions &&
+    formData.grupo &&
+    filteredGrupoSuggestions.length > 0 && (
+      <div className="absolute z-50 mt-1 w-full bg-surface-2 border border-border rounded-lg overflow-hidden shadow-lg">
+        {filteredGrupoSuggestions.map((grupo) => (
+          <button
+            key={grupo}
+            type="button"
+            onMouseDown={() => {
+              setFormData({ ...formData, grupo });
+              setShowGrupoSuggestions(false);
+            }}
+            className="w-full text-left px-3 py-2 text-sm hover:bg-surface-3"
+          >
+            {grupo}
+          </button>
+        ))}
+      </div>
+    )}
               </div>
 
               <div>
