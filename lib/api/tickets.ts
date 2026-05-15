@@ -128,16 +128,14 @@ export async function updateTicketStatus(
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      'x-sender-type': 'admin',
     },
     body: JSON.stringify({ status }),
   });
-
   const j = await r.json();
-
   if (!r.ok) {
     throw new Error(j.error || 'Error actualizando ticket');
   }
-
   return j;
 }
 

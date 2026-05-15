@@ -38,10 +38,28 @@ export async function setClientToken(clientId: string) {
 
 export async function getClientIdFromToken(): Promise<string | null> {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
+
   if (!token) return null;
+
   try {
     const { payload } = await jwtVerify(token, SECRET);
-    return (payload.clientId as string) ?? null;
+
+    const clientId = payload.clientId as string;
+
+    if (!clientId) return null;
+
+    // VALIDAR EXISTENCIA REAL EN DB
+    const { data } = await supabaseAdmin
+      .from('clients')
+      .select('id')
+      .eq('id', clientId)
+      .single();
+
+    if (!data) {
+      return null;
+    }
+
+    return clientId;
   } catch {
     return null;
   }
