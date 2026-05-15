@@ -4,7 +4,7 @@ import { getClientIdFromToken } from '@/lib/auth/clientToken';
 import { isAdmin } from '@/lib/auth/admin';
 
 export async function POST(req: NextRequest) {
-  if (!(await getClientIdFromToken()) && !isAdmin()) {
+ if (!(await getClientIdFromToken()) && !(await isAdmin())){
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
   const form = await req.formData();
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (!file) return NextResponse.json({ error: 'Sin archivo' }, { status: 400 });
 
   const blob = await put(`tickets/${Date.now()}-${file.name}`, file, {
-    access: 'public',
+    access: 'private',
     token: process.env.BLOB_READ_WRITE_TOKEN,
   });
 
@@ -20,6 +20,6 @@ export async function POST(req: NextRequest) {
     file_name: file.name,
     file_type: file.type,
     file_size: file.size,
-    file_url: blob.url,
+    file_url: blob.downloadUrl,
   });
 }
