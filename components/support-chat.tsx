@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { 
-  getTicketById, 
-  addReply, 
-  getStatusLabel, 
-  type Ticket 
-} from "@/lib/tickets";
+import {
+  getTicket,
+  sendReply,
+  getStatusLabel,
+  type Ticket
+} from "@/lib/api/tickets";
 import { 
   Send, 
   MessageCircle, 
@@ -20,6 +20,9 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
+import { useCallback } from "react";
+import { useTicketChannel } from "@/lib/realtime/useTicketChannel";
+
 interface SupportChatProps {
   ticketId: string;
   onBack?: () => void;
@@ -32,47 +35,72 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadTicket = () => {
-      const t = getTicketById(ticketId);
+  const loadTicket = async () => {
+    try {
+      setLoading(true);
+      const t = await getTicket(ticketId);
       setTicket(t);
-    };
-    loadTicket();
-    const interval = setInterval(loadTicket, 3000);
-    return () => clearInterval(interval);
-  }, [ticketId]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  loadTicket();
+
+}, [ticketId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [ticket?.replies]);
+  }, [ticket?.ticket_replies]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if ((!message.trim() && files.length === 0) || ticket?.status === "cerrado") return;
+  e.preventDefault();
+
+  if ((!message.trim() && files.length === 0) || ticket?.status === "cerrado") {
+    return;
+  }
+
+  try {
     setIsSending(true);
-    await new Promise((resolve) => setTimeout(resolve, 300));
+
     const attachments = await Promise.all(
-  files.map(async (file) => ({
-    name: file.name,
-    size: file.size,
-    type: file.type,
-    dataUrl: await fileToDataUrl(file),
-  }))
-);
-    const updated = addReply(
-  ticketId,
-  message.trim(),
-  false,
-  attachments
-);
-    if (updated) {
-      setTicket(updated);
-      setMessage("");
-      setFiles([]);
-    }
+      files.map(async (file) => ({
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+        file_url: await fileToDataUrl(file),
+      }))
+    );
+
+    await sendReply(
+      ticketId,
+      message.trim(),
+      attachments
+    );
+
+    const updated = await getTicket(ticketId);
+
+    setTicket(updated);
+
+    setMessage("");
+    setFiles([]);
+
+  } catch (error) {
+    console.error(error);
+
+  } finally {
     setIsSending(false);
-  };
+  }
+};
+
+useTicketChannel(ticketId, async () => {
+  const updated = await getTicket(ticketId);
+  setTicket(updated);
+});
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -110,8 +138,8 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
   });
 
   const getClosedTimeRemaining = () => {
-    if (!ticket?.closedAt) return null;
-    const closedDate = new Date(ticket.closedAt);
+    if (!ticket?.closed_at) return null;
+    const closedDate = new Date(ticket.closed_at);
     const expiryDate = new Date(closedDate.getTime() + 1000 * 20); // 1 minuto cambiar  2 * 24 * 60 * 60 * 1000 para 2 dias
     const now = new Date();
     const hoursRemaining = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 20)));
@@ -122,7 +150,7 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
     return `${hoursRemaining} hora${hoursRemaining !== 1 ? "s" : ""}`;
   };
 
-  if (!ticket) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="bg-surface border border-border rounded-[20px] p-12 text-center max-w-md">
@@ -167,9 +195,9 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4 text-gold" />
-              <span className="font-semibold text-foreground text-sm">Ticket #{ticket.id.slice(0, 8)}</span>
+              <span className="font-semibold text-foreground text-sm">Ticket #{ticket?.id.slice(0, 8)}</span>
             </div>
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${getStatusStyle(ticket.status)}`}>
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${getStatusStyle(ticket?.status)}`}>
               {getStatusIcon(ticket.status)}
               {getStatusLabel(ticket.status)}
             </span>
@@ -178,19 +206,19 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
           <div className="bg-[rgba(240,180,41,0.06)] border border-[rgba(240,180,41,0.15)] rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-lg">
-                {ticket.categoria.includes("Contraseña") ? "🔐" : 
-                 ticket.categoria.includes("2FA") ? "🛡️" : 
-                 ticket.categoria.includes("Correo") ? "📧" : 
-                 ticket.categoria.includes("entrantes") ? "📥" : 
-                 ticket.categoria.includes("salientes") ? "📤" : 
-                 ticket.categoria.includes("Comisiones") ? "💰" : 
-                 ticket.categoria.includes("usuarios") ? "👥" : 
-                 ticket.categoria.includes("Alias") ? "🏷️" : 
-                 ticket.categoria.includes("API") || ticket.categoria.includes("Integraciones") ? "🔗" : "⚠️"}
+                {ticket?.categoria.includes("Contraseña") ? "🔐" : 
+                 ticket?.categoria.includes("2FA") ? "🛡️" : 
+                 ticket?.categoria.includes("Correo") ? "📧" : 
+                 ticket?.categoria.includes("entrantes") ? "📥" : 
+                 ticket?.categoria.includes("salientes") ? "📤" : 
+                 ticket?.categoria.includes("Comisiones") ? "💰" : 
+                 ticket?.categoria.includes("usuarios") ? "👥" : 
+                 ticket?.categoria.includes("Alias") ? "🏷️" : 
+                 ticket?.categoria.includes("API") || ticket?.categoria.includes("Integraciones") ? "🔗" : "⚠️"}
               </span>
-              <span className="font-semibold text-gold text-sm">{ticket.categoria}</span>
+              <span className="font-semibold text-gold text-sm">{ticket?.categoria}</span>
             </div>
-            <p className="text-muted-foreground text-sm ml-7">{ticket.subcategoria}</p>
+            <p className="text-muted-foreground text-sm ml-7">{ticket?.subcategoria}</p>
           </div>
 
           {ticket.status === "cerrado" && (
@@ -212,26 +240,26 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
           <div className="flex justify-end">
             <div className="max-w-[85%]">
               <div className="bg-surface-3 border border-border-2 text-foreground rounded-2xl rounded-br-md px-4 py-3">
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{ticket.detalle}</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{ticket?.detalle}</p>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 text-right font-mono">
-                {formatDate(ticket.createdAt)}
+                {formatDate(ticket.created_at)}
               </p>
             </div>
           </div>
 
           {/* Attachments */}
-          {ticket.attachments && ticket.attachments.length > 0 && (
+          {ticket?.ticket_attachments && ticket?.ticket_attachments.length > 0 && (
             <div className="flex justify-end">
               <div className="max-w-[85%] space-y-2">
-                {ticket.attachments.map((att, index) => (
+                {ticket?.ticket_attachments.map((att, index) => (
                   <div key={index} className="bg-surface-2 rounded-xl p-2 border border-border">
-                    {att.type.startsWith("image/") ? (
-                      <img src={att.dataUrl} alt={att.name} className="rounded-lg max-h-40 object-cover" />
+                    {att.file_type.startsWith("image/") ? (
+                      <img src={att.file_url} alt={att.file_name} className="rounded-lg max-h-40 object-cover" />
                     ) : (
                       <div className="flex items-center gap-2 p-2">
                         <FileText className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm text-foreground truncate">{att.name}</span>
+                        <span className="text-sm text-foreground truncate">{att.file_name}</span>
                       </div>
                     )}
                   </div>
@@ -241,57 +269,57 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
           )}
 
           {/* Replies */}
-          {ticket.replies.map((reply) => (
-            <div key={reply.id} className={`flex ${reply.isAdmin ? "justify-start" : "justify-end"}`}>
+          {ticket?.ticket_replies?.map((reply) => (
+            <div key={reply.id} className={`flex ${reply.is_admin ? "justify-start" : "justify-end"}`}>
               <div className="max-w-[85%]">
-                {reply.isAdmin && (
+                {reply.is_admin && (
                   <p className="text-xs text-green mb-1 ml-1 font-semibold">Soporte RECASH</p>
                 )}
                 <div className={`rounded-2xl px-4 py-3 ${
-                  reply.isAdmin 
+                  reply.is_admin 
                     ? "bg-[rgba(46,204,113,0.06)] border border-[rgba(46,204,113,0.15)] text-[#C8E6C9] rounded-bl-md" 
                     : "bg-surface-3 border border-border-2 text-foreground rounded-br-md"
                 }`}>
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">{reply.content}</p>
-                  {reply.attachments && reply.attachments.length > 0 && (
+                  {reply.ticket_attachments && reply.ticket_attachments.length > 0 && (
   <div className="flex flex-wrap gap-2 mt-3">
-    {reply.attachments.map((att, index) => (
-      att.type.startsWith("image/") ? (
+    {reply.ticket_attachments.map((att, index) => (
+      att.file_type.startsWith("image/") ? (
         <a
           key={index}
-          href={att.dataUrl}
-          download={att.name}
+          href={att.file_url}
+          download={att.file_name}
         >
           <img
-            src={att.dataUrl}
-            alt={att.name}
+            src={att.file_url}
+            alt={att.file_name}
             className="rounded-lg max-h-40 object-cover border border-border"
           />
         </a>
       ) : (
         <a
           key={index}
-          href={att.dataUrl}
-          download={att.name}
+          href={att.file_url}
+          download={att.file_name}
           className="flex items-center gap-2 p-2 rounded-lg bg-surface-2 border border-border"
         >
           <FileText className="h-4 w-4" />
-          <span className="text-xs truncate">{att.name}</span>
+          <span className="text-xs truncate">{att.file_name}</span>
         </a>
       )
     ))}
   </div>
 )}
                 </div>
-                <p className={`text-[10px] text-muted-foreground mt-1.5 font-mono ${reply.isAdmin ? "text-left ml-1" : "text-right"}`}>
-                  {formatDate(reply.createdAt)}
+                <p className={`text-[10px] text-muted-foreground mt-1.5 font-mono ${reply.is_admin ? "text-left ml-1" : "text-right"}`}>
+                  {formatDate(reply.created_at)}
                 </p>
               </div>
             </div>
           ))}
 
           {/* Waiting message */}
-          {ticket.replies.length === 0 && ticket.status === "pendiente" && (
+          {ticket?.ticket_replies?.length === 0 && ticket?.status === "pendiente" && (
             <div className="flex justify-center py-6">
               <div className="flex items-center gap-3 text-muted-foreground text-sm">
                 <div className="flex gap-1">
@@ -308,7 +336,7 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
         </div>
 
         {/* Input */}
-        {ticket.status !== "cerrado" ? (
+        {ticket?.status !== "cerrado" ? (
           <div className="border-t border-border p-4 flex-shrink-0">
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <input

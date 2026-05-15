@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { validateAdmin, setAdminAuthed } from "@/lib/tickets";
+import { validateAdmin, setAdminAuthed } from "@/lib/api/tickets";
 import Image from "next/image";
 
 interface AdminLoginProps {

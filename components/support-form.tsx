@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { saveTicket, CATEGORIAS, getActiveTicket, type Attachment, getTickets } from "@/lib/tickets";
+import { saveTicket, CATEGORIAS, getActiveTicket, type Attachment, getTickets } from "@/lib/api/tickets";
 import { 
   Send, 
   Upload, 

@@ -2,15 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  saveTicket,
-  CATEGORIAS,
+  createTicket,
   getActiveTickets,
-  setActiveTicket,
   getStatusLabel,
   getStatusColor,
   type Attachment,
   type Ticket,
-} from "@/lib/tickets";
+} from "@/lib/api/tickets";
 import {
   Send,
   Upload,
@@ -27,6 +25,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { SupportChat } from "./support-chat";
+import { CATEGORIAS } from "@/lib/contanst/categories";
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -63,18 +62,25 @@ export function SupportForm() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Decidir paso inicial: si hay tickets activos => lista, si no => crear nuevo
-  useEffect(() => {
-    const list = getActiveTickets();
-    setTickets(list);
-    setStep(list.length > 0 ? "list" : "category");
-  }, []);
 
-  const refreshTickets = () => {
-    const list = getActiveTickets();
-    setTickets(list);
-    return list;
-  };
+useEffect(() => {
+  async function loadTickets() {
+    try {
+      const data = await getActiveTickets();
+      setTickets(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  loadTickets();
+}, []);
+
+ const refreshTickets = async () => {
+  const list = await getActiveTickets();
+  setTickets(list);
+  return list;
+};
 
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -96,7 +102,8 @@ export function SupportForm() {
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(file);
       });
-      newAttachments.push({ name: file.name, size: file.size, type: file.type, dataUrl });
+      const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
+      newAttachments.push({id, file_name: file.name, file_size: file.size, file_type: file.type, file_url: dataUrl });
     }
     setAttachments((prev) => [...prev, ...newAttachments]);
   };
@@ -139,12 +146,14 @@ export function SupportForm() {
     if (!formData.mail || !formData.titular || !formData.grupo || !formData.detalle) return;
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const ticket = saveTicket({
-      categoria: selectedCategoria,
-      subcategoria: selectedSubcategoria,
-      ...formData,
-      attachments,
-    });
+    const ticket = await createTicket({
+  categoria: selectedCategoria,
+  subcategoria: selectedSubcategoria,
+  mail: formData.mail,
+  titular: formData.titular,
+  grupo: formData.grupo,
+  detalle: formData.detalle,
+});
     setActiveTicketId(ticket.id);
     setIsSubmitting(false);
     refreshTickets();
@@ -154,11 +163,11 @@ export function SupportForm() {
     setStep("chat");
   };
 
-  const handleBackToCategory = () => {
+  const handleBackToCategory = async () => {
     setSelectedCategoria("");
     setSelectedSubcategoria("");
     // Si tiene tickets, volver a la lista; si no, al selector
-    const list = refreshTickets();
+    const list = await refreshTickets();
     setStep(list.length > 0 ? "list" : "category");
   };
 
@@ -170,15 +179,13 @@ export function SupportForm() {
   };
 
   const handleOpenTicket = (ticket: Ticket) => {
-    setActiveTicket(ticket.id);
     setActiveTicketId(ticket.id);
     setStep("chat");
   };
 
-  const handleBackToList = () => {
-    const list = refreshTickets();
+  const handleBackToList = async () => {
+    const list = await refreshTickets();
     setActiveTicketId(null);
-    setActiveTicket(null);
     setStep(list.length > 0 ? "list" : "category");
   };
 
@@ -235,7 +242,7 @@ export function SupportForm() {
 
             <div className="space-y-2.5 max-h-[55vh] overflow-y-auto pr-1">
               {tickets.map((ticket) => {
-                const lastReply = ticket.replies[ticket.replies.length - 1];
+                const lastReply = ticket.ticket_replies?.[ticket.ticket_replies.length - 1];
                 const preview = lastReply?.content || ticket.detalle;
                 return (
                   <button
@@ -264,11 +271,11 @@ export function SupportForm() {
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {formatDate(ticket.updatedAt)}
+                        {formatDate(ticket.updated_at)}
                       </span>
                       <span className="inline-flex items-center gap-1 text-gold opacity-70 group-hover:opacity-100 transition-opacity">
                         <MessageSquare className="h-3 w-3" />
-                        {ticket.replies.length} {ticket.replies.length === 1 ? "mensaje" : "mensajes"}
+                        {ticket.ticket_replies?.length} {ticket.ticket_replies?.length === 1 ? "mensaje" : "mensajes"}
                         <ChevronRight className="h-3.5 w-3.5" />
                       </span>
                     </div>
@@ -514,11 +521,11 @@ export function SupportForm() {
                   <div className="flex flex-wrap gap-2 mt-3">
                     {attachments.map((file, index) => (
                       <div key={index} className="relative">
-                        {file.type.startsWith("image/") ? (
+                        {file.file_type.startsWith("image/") ? (
                           <div className="relative">
                             <img
-                              src={file.dataUrl}
-                              alt={file.name}
+                              src={file.file_url}
+                              alt={file.file_name}
                               className="w-20 h-16 object-cover rounded-lg border border-border-2"
                             />
                             <button
@@ -532,7 +539,7 @@ export function SupportForm() {
                         ) : (
                           <div className="flex items-center gap-2 px-3 py-2 bg-surface-3 rounded-lg border border-border text-[12px] text-[#C8C4BC] max-w-[180px]">
                             <FileText className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{file.name}</span>
+                            <span className="truncate">{file.file_name}</span>
                             <button
                               type="button"
                               onClick={() => removeAttachment(index)}

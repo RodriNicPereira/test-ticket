@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  getTickets,
+  getAdminTickets,
   updateTicketStatus,
-  addReply,
+  sendAdminReply,
+  logoutAdmin,
   getStatusLabel,
-  setAdminAuthed,
   type Ticket,
   type TicketStatus,
-} from "@/lib/tickets";
+  getTicket,
+} from "@/lib/api/tickets"; 
 import {
   LogOut,
   Send,
@@ -40,62 +41,85 @@ export function AdminDashboard() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const loadTickets = () => {
-      const updated = getTickets();
-      setTickets(updated);
-      if (selectedTicket) {
-        const found = updated.find((t) => t.id === selectedTicket.id);
-        setSelectedTicket(found || null);
-      }
-    };
-    loadTickets();
-    const interval = setInterval(loadTickets, 3000);
-    return () => clearInterval(interval);
-  }, [selectedTicket?.id]);
+  loadTickets();
+
+  const interval = setInterval(loadTickets, 3000);
+
+  return () => clearInterval(interval);
+}, [selectedTicket?.id]);
 
   useEffect(() => {
    // messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedTicket?.replies]);
+  }, [selectedTicket?.ticket_replies]);
 
-  const handleStatusChange = (id: string, status: TicketStatus) => {
-    updateTicketStatus(id, status);
-    const updated = getTickets();
+  const loadTickets = async () => {
+  try {
+    const updated = await getAdminTickets();
+
     setTickets(updated);
-    const found = updated.find((t) => t.id === id);
-    setSelectedTicket(found || null);
-  };
+
+    if (selectedTicket?.id) {
+      const fullTicket = await getTicket(selectedTicket.id , 'admin');
+      setSelectedTicket(fullTicket);
+    }
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+  
+  const handleStatusChange = async (
+  id: string,
+  status: TicketStatus
+) => {
+  try {
+    await updateTicketStatus(id, status);
+
+    await loadTickets();
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const handleSendReply = async () => {
-    if (!selectedTicket || (!replyText.trim() && files.length === 0)) return;
+  if (!selectedTicket) return;
+
+  if (!replyText.trim() && files.length === 0) return;
+
+  try {
     setIsSending(true);
-    await new Promise((r) => setTimeout(r, 300));
-    const attachments = await Promise.all(
-      files.map(async (file) => ({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        dataUrl: await fileToDataUrl(file),
-      }))
-    );
-    addReply(selectedTicket.id, replyText.trim(), true, attachments);
+
+    const formData = new FormData();
+
+    formData.append("message", replyText);
+
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    await sendAdminReply(selectedTicket.id,replyText.trim(),files);
+
     setReplyText("");
     setFiles([]);
+
+    await loadTickets();
+  } catch (error) {
+    console.error(error);
+  } finally {
     setIsSending(false);
-    const updated = getTickets();
-    setTickets(updated);
-    const found = updated.find((t) => t.id === selectedTicket.id);
-    setSelectedTicket(found || null);
-  };
+  }
+};
 
   const handleCloseTicket = () => {
     if (!selectedTicket) return;
     handleStatusChange(selectedTicket.id, "cerrado");
   };
 
-  const handleLogout = () => {
-    setAdminAuthed(false);
-    window.location.reload();
-  };
+  const handleLogout = async () => {
+  await logoutAdmin();
+
+  window.location.href = "/admin/login";
+};
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchFilter = filter === "todos" || ticket.status === filter;
@@ -149,13 +173,6 @@ export function AdminDashboard() {
     if (categoria.includes("API") || categoria.includes("Integraciones") || categoria.includes("Webhook")) return "🔗";
     return "⚠️";
   };
-
-  const fileToDataUrl = (file: File): Promise<string> =>
-  new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.readAsDataURL(file);
-  });
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -257,7 +274,7 @@ export function AdminDashboard() {
                     </div>
                     <p className="text-[13px] font-medium text-foreground truncate mb-0.5">{ticket.subcategoria}</p>
                     <p className="text-[11px] text-muted-foreground truncate">
-                      {ticket.titular} · {formatDate(ticket.createdAt)}
+                      {ticket.titular} · {formatDate(ticket.created_at)}
                     </p>
                     <div className="mt-2">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getStatusStyle(ticket.status)}`}>
@@ -287,7 +304,7 @@ export function AdminDashboard() {
                     <h2 className="text-xl font-bold text-foreground leading-tight">{selectedTicket.subcategoria}</h2>
                     <div className="flex items-center gap-2.5 flex-wrap mt-1.5">
                       <span className="text-[11px] font-mono text-muted-foreground">#{tickets.indexOf(selectedTicket) + 1}</span>
-                      <span className="text-[11px] text-muted-foreground">{formatDateFull(selectedTicket.createdAt)}</span>
+                      <span className="text-[11px] text-muted-foreground">{formatDateFull(selectedTicket.created_at)}</span>
                     </div>
                   </div>
                   <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full ${getStatusStyle(selectedTicket.status)}`}>
@@ -339,31 +356,31 @@ export function AdminDashboard() {
                 </div>
 
                 {/* Attachments */}
-                {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
+                {selectedTicket.ticket_attachments && selectedTicket.ticket_attachments.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {selectedTicket.attachments.map((attachment, index) => (
-                      attachment.type.startsWith("image/") ? (
+                    {selectedTicket.ticket_attachments.map((attachment, index) => (
+                      attachment.file_type.startsWith("image/") ? (
                         <a
                           key={index}
-                          href={attachment.dataUrl}
-                          download={attachment.name}
+                          href={attachment.file_url}
+                          download={attachment.file_name}
                           className="relative group"
                         >
                           <img 
-                            src={attachment.dataUrl} 
-                            alt={attachment.name} 
+                            src={attachment.file_url} 
+                            alt={attachment.file_name} 
                             className="w-24 h-[72px] object-cover rounded-lg border border-border hover:opacity-80 transition-opacity" 
                           />
                         </a>
                       ) : (
                         <a
                           key={index}
-                          href={attachment.dataUrl}
-                          download={attachment.name}
+                          href={attachment.file_url}
+                          download={attachment.file_name}
                           className="flex items-center gap-2 px-3.5 py-2 bg-surface border border-border rounded-lg text-[13px] text-foreground hover:bg-surface-2 transition-colors"
                         >
                           <FileText className="h-4 w-4" />
-                          <span className="max-w-[120px] truncate">{attachment.name}</span>
+                          <span className="max-w-[120px] truncate">{attachment.file_name}</span>
                           <Download className="h-3.5 w-3.5" />
                         </a>
                       )
@@ -384,50 +401,50 @@ export function AdminDashboard() {
               <div className="flex-1 overflow-y-auto pb-50 px-7 space-y-2 max-w-[760px]">
                               
                 {/* Replies support */}
-                {selectedTicket.replies.map((reply) => (
-                  <div key={reply.id}>
-                    <p className="text-[11px] text-muted-foreground mb-1.5">{formatDate(reply.createdAt)}</p>
+                {selectedTicket.ticket_replies?.map((reply) => (
+                  <div key={`${reply.id}-${reply.created_at}`}>
+                    <p className="text-[11px] text-muted-foreground mb-1.5">{formatDate(reply.created_at)}</p>
                     <div className={`rounded-lg p-3.5 text-sm leading-relaxed ${
-                      reply.isAdmin 
+                      reply.is_admin 
                         ? "bg-[rgba(46,204,113,0.06)] border border-[rgba(46,204,113,0.15)] text-[#C8E6C9]" 
                         : "bg-surface border border-border text-[#D8D4CC]"
                     }`}>
                       <p className="whitespace-pre-wrap">{reply.content}</p>
-                      {(reply.attachments?.length ?? 0) > 0 && (
+                      {(reply.ticket_attachments?.length ?? 0) > 0 && (
   <div className="flex flex-wrap gap-2 mt-3">
-    {reply.attachments?.map((attachment, i) =>
-      attachment.type.startsWith("image/") ? (
+    {reply.ticket_attachments?.map((attachment, i) =>
+      attachment.file_type.startsWith("image/") ? (
         <a
           key={i}
-          href={attachment.dataUrl}
-          download={attachment.name}
+          href={attachment.file_url}
+          download={attachment.file_name}
         >
           <img
-            src={attachment.dataUrl}
-            alt={attachment.name}
+            src={attachment.file_url}
+            alt={attachment.file_name}
             className="w-28 h-20 object-cover rounded-lg border border-border"
           />
         </a>
       ) : (
         <a
           key={i}
-          href={attachment.dataUrl}
-          download={attachment.name}
+          href={attachment.file_url}
+          download={attachment.file_name}
           className="flex items-center gap-2 px-3 py-2 bg-surface-2 rounded-lg text-[12px]"
         >
           <FileText className="h-4 w-4" />
-          <span>{attachment.name}</span>
+          <span>{attachment.file_name}</span>
         </a>
       )
     )}
   </div>
 )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">{reply.isAdmin ? "Soporte" : "Cliente"}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{reply.is_admin ? "Soporte" : "Cliente"}</p>
                   </div>
                 ))}
 
-                {selectedTicket.replies.length === 0 && (
+                {selectedTicket.ticket_replies?.length === 0 && (
                   <p className="text-[13px] text-muted-foreground text-center py-4">Sin respuestas aún</p>
                 )}
 
