@@ -28,6 +28,10 @@ import {
   ChevronUp,
 } from "lucide-react";
 import Image from "next/image";
+import {
+  useTicketChannel,
+  useAdminTicketsChannel
+} from "@/lib/realtime/useTicketChannel";
 
 export function AdminDashboard() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -42,15 +46,22 @@ export function AdminDashboard() {
 
   useEffect(() => {
   loadTickets();
-
-  const interval = setInterval(loadTickets, 3000);
-
-  return () => clearInterval(interval);
-}, [selectedTicket?.id]);
+  }, []);
 
   useEffect(() => {
    // messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedTicket?.ticket_replies]);
+
+useTicketChannel(
+  selectedTicket?.id || null,
+  async () => {
+    await loadTickets();
+  }
+);
+
+useAdminTicketsChannel(async () => {
+  await loadTickets();
+});
 
   const loadTickets = async () => {
   try {
@@ -417,19 +428,19 @@ export function AdminDashboard() {
         <a
           key={i}
           href={attachment.file_url}
-          download={attachment.file_name}
+          target="_blank"
+          rel="noopener noreferrer"
         >
           <img
             src={attachment.file_url}
             alt={attachment.file_name}
-            className="w-28 h-20 object-cover rounded-lg border border-border"
+            className="w-28 h-20 object-cover rounded-lg border border-border cursor-zoom-in"
           />
         </a>
       ) : (
         <a
           key={i}
           href={attachment.file_url}
-          download={attachment.file_name}
           className="flex items-center gap-2 px-3 py-2 bg-surface-2 rounded-lg text-[12px]"
         >
           <FileText className="h-4 w-4" />
