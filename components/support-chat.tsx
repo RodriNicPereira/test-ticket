@@ -341,49 +341,66 @@ useTicketChannel(ticketId, async () => {
         {/* Input */}
         {ticket?.status !== "cerrado" ? (
           <div className="border-t border-border p-4 flex-shrink-0">
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Escribí tu mensaje..."
-                className="flex-1 px-4 xs:px-1 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
-                disabled={isSending}
-              />
-              <>
+            <form onSubmit={handleSendMessage} className="flex items-center gap-1.5 xs:gap-2">
+
   <input
-    ref={fileInputRef}
-    type="file"
-    multiple
-    accept="image/*,.pdf,.doc,.docx"
-    className="hidden"
-    onChange={(e) => {
-      if (!e.target.files) return;
-      setFiles(Array.from(e.target.files));
-    }}
+    value={message}
+    onChange={(e) => setMessage(e.target.value)}
+    placeholder="Escribí tu mensaje..."
+    className="
+      flex-1
+      min-w-0
+      px-2 xs:px-4
+      py-2.5
+      bg-surface-2
+      border border-border-2
+      rounded-lg
+      text-sm
+      text-foreground
+      placeholder:text-[#444]
+      focus:outline-none
+      focus:border-gold-dim
+      transition-all
+    "
+    disabled={isSending}
   />
 
   <button
-      type="button"
-      onClick={() => fileInputRef.current?.click()}
-      className="px-3 py-2.5 border border-border-2 rounded-lg text-muted-foreground hover:text-gold-dim hover:border-gold-dim transition-all"
-    >
-      <Paperclip className="h-4 w-4" />
-    </button>
-</>
-              <button 
-                type="submit" 
-                disabled={
-  isSending ||
-  (!message.trim() && files.length === 0)
-}
-                className="px-4 py-3 bg-gradient-to-br from-gold to-[#C8881A] border-none rounded-lg text-black cursor-pointer hover:opacity-90 transition-all disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
+    type="button"
+    onClick={() => fileInputRef.current?.click()}
+    className="
+      shrink-0
+      px-2 xs:px-3
+      py-2.5
+      border border-border-2
+      rounded-lg
+      text-muted-foreground
+    "
+  >
+    <Paperclip className="h-4 w-4" />
+  </button>
+
+  <button
+    type="submit"
+    disabled={isSending || (!message.trim() && files.length === 0)}
+    className="
+      shrink-0
+      px-3 xs:px-4
+      py-2.5
+      bg-gradient-to-br from-gold to-[#C8881A]
+      rounded-lg
+      text-black
+      flex items-center justify-center
+      disabled:opacity-35
+    "
+  >
+    <Send className="h-4 w-4" />
+  </button>
+
+</form>
             {files.length > 0 && (
-  <div className="flex flex-wrap gap-2 mt-3">
-    {files.map((file, index) => (
+           <div className="flex flex-wrap gap-2 mt-3">
+          {files.map((file, index) => (
       <div
         key={index}
         className="flex items-center gap-2 px-3 py-2 bg-surface-2 border border-border rounded-lg text-xs"
@@ -403,10 +420,10 @@ useTicketChannel(ticketId, async () => {
           <XCircle className="h-3.5 w-3.5 text-muted-foreground hover:text-red-400" />
         </button>
       </div>
-    ))}
-  </div>
-)}
-          </div>
+        ))}
+      </div>
+        )}
+        </div>
         ) : (
           <div className="border-t border-border p-4 flex-shrink-0 bg-surface-2">
             <p className="text-sm text-muted-foreground text-center">
