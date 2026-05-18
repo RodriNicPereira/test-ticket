@@ -173,7 +173,7 @@ useTicketChannel(ticketId, async () => {
         {/* Header */}
 <div className="border-b border-border px-5 py-4 flex-shrink-0">
 
-  <div className="relative flex items-center justify-center mb-4">
+  <div className="relative flex items-center justify-end sm:justify-center mb-4">
 
     {onBack && (
       <button
