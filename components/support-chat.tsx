@@ -241,9 +241,9 @@ useTicketChannel(ticketId, async () => {
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* Initial ticket message */}
           <div className="flex justify-end">
-            <div className="max-w-[85%]">
+            <div className="max-w-[85%] bg-card">
               <div className="bg-surface-3 border border-border-2 text-foreground rounded-2xl rounded-br-md px-4 py-3">
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{ticket?.detalle}</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed break-all overflow-hidden">{ticket?.detalle}</p>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 text-right font-mono">
                 {formatDate(ticket.created_at)}
@@ -283,7 +283,7 @@ useTicketChannel(ticketId, async () => {
                     ? "bg-[rgba(46,204,113,0.06)] border border-[rgba(46,204,113,0.15)] text-[#C8E6C9] rounded-bl-md" 
                     : "bg-surface-3 border border-border-2 text-foreground rounded-br-md"
                 }`}>
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{reply.content}</p>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed break-all overflow-hidden">{reply.content}</p>
                   {reply.ticket_attachments && reply.ticket_attachments.length > 0 && (
   <div className="flex flex-wrap gap-2 mt-3">
     {reply.ticket_attachments.map((att, index) => (
