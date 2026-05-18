@@ -289,7 +289,7 @@ const saveDataLocalStorage = () => {
                 <p className="text-[10px] font-bold tracking-widest uppercase text-gold">
                   {tickets.length} {tickets.length === 1 ? "ticket activo" : "tickets activos"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">Tocá uno para abrir el chat</p>
+                <p className="text-xs text-muted-foreground mt-1 break-words max-w-[140px] xs:max-w-none">Tocá uno para abrir el chat</p>
               </div>
               <button
                 onClick={handleNewTicket}
@@ -329,7 +329,7 @@ const saveDataLocalStorage = () => {
                       {preview}
                     </p>
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
+                      <span className="hidden sm:inline-flex items-center gap-1 ">
                         <Clock className="h-3 w-3" />
                         {formatDate(ticket.updated_at)}
                       </span>
