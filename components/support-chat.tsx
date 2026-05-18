@@ -340,13 +340,13 @@ useTicketChannel(ticketId, async () => {
 
         {/* Input */}
         {ticket?.status !== "cerrado" ? (
-          <div className="border-t border-border p-4 flex-shrink-0 xs:p-2">
+          <div className="border-t border-border p-4 flex-shrink-0">
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Escribí tu mensaje..."
-                className="flex-1 px-4 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
+                className="flex-1 px-4 xs:px-1 py-3 bg-surface-2 border border-border-2 rounded-lg text-sm text-foreground placeholder:text-[#444] focus:outline-none focus:border-gold-dim focus:shadow-[0_0_0_3px_rgba(240,180,41,0.08)] transition-all"
                 disabled={isSending}
               />
               <>
