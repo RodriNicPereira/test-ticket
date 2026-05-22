@@ -549,7 +549,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                {/* Mail oficial de la cuenta */}
+                <div className="relative">
                   <label className="flex items-center gap-1.5 text-[13px] font-medium text-[#C8C4BC] mb-2">
                     Mail oficial de la cuenta <span className="text-gold">*</span>
                   </label>
@@ -593,7 +594,8 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 
                 </div>
-                <div>
+                {/* Titular de la cuenta */}
+                <div className="relative">
                   <label className="flex items-center gap-1.5 text-[13px] font-medium text-[#C8C4BC] mb-2">
                     Titular de la cuenta <span className="text-gold">*</span>
                   </label>
@@ -636,8 +638,8 @@ const handleSubmit = async (e: React.FormEvent) => {
     )}
                 </div>
               </div>
-
-              <div>
+              {/* Grupo de Signal asignado */}
+              <div className="relative">
                 <label className="flex items-center gap-1.5 text-[13px] font-medium text-[#C8C4BC] mb-2">
                   Grupo de Signal asignado <span className="text-gold">*</span>
                 </label>
@@ -679,8 +681,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       </div>
     )}
               </div>
-
-              <div>
+              {/* Detalle del problema */}
+              < div>
                 <label className="flex items-center gap-1.5 text-[13px] font-medium text-[#C8C4BC] mb-2">
                   Detalle del problema <span className="text-gold">*</span>
                 </label>
