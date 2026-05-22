@@ -246,25 +246,6 @@ useTicketChannel(ticketId, async () => {
             </div>
           </div>
 
-          {/* Attachments */}
-          {ticket?.ticket_attachments && ticket?.ticket_attachments.length > 0 && (
-            <div className="flex justify-end">
-              <div className="max-w-[85%] space-y-2">
-                {ticket?.ticket_attachments.map((att, index) => (
-                  <div key={index} className="bg-surface-2 rounded-xl p-2 border border-border">
-                    {att.file_type.startsWith("image/") ? (
-                      <img src={`/api/file?pathname=${encodeURIComponent(att.blob_path)}`} alt={att.file_name} className="rounded-lg max-h-40 object-cover" />
-                    ) : (
-                      <div className="flex items-center gap-2 p-2">
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm text-foreground truncate">{att.file_name}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Replies */}
           {ticket?.ticket_replies?.map((reply) => (
