@@ -8,6 +8,8 @@ import {
   getStatusColor,
   type Attachment,
   type Ticket,
+  uploadFile,
+  sendReply,
 } from "@/lib/api/tickets";
 import {
   Send,
@@ -26,6 +28,7 @@ import {
 import Image from "next/image";
 import { SupportChat } from "./support-chat";
 import { CATEGORIAS } from "@/lib/contanst/categories";
+
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -49,12 +52,7 @@ export function SupportForm() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedCategoria, setSelectedCategoria] = useState("");
   const [selectedSubcategoria, setSelectedSubcategoria] = useState("");
-  const [formData, setFormData] = useState({
-    mail: "",
-    titular: "",
-    grupo: "",
-    detalle: "",
-  });
+  const [formData, setFormData] = useState({mail: "",titular: "",grupo: "",detalle: "",});
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTicketId, setActiveTicketId] = useState<string | null>(null);
@@ -142,30 +140,50 @@ const saveDataLocalStorage = () => {
 };
 
   const handleFiles = async (files: FileList | null) => {
-    if (!files) return;
-    const remainingSlots = MAX_FILES - attachments.length;
-    const filesToProcess = Array.from(files).slice(0, remainingSlots);
-    const newAttachments: Attachment[] = [];
+  if (!files) return;
 
-    for (const file of filesToProcess) {
-      if (file.size > MAX_FILE_SIZE) {
-        alert(`El archivo "${file.name}" supera los 10MB permitidos.`);
-        continue;
-      }
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        alert(`El tipo de archivo "${file.name}" no está permitido.`);
-        continue;
-      }
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-      const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
-      newAttachments.push({id, file_name: file.name, file_size: file.size, file_type: file.type, file_url: dataUrl });
+  const remainingSlots = MAX_FILES - attachments.length;
+
+  const filesToProcess = Array.from(files).slice(0, remainingSlots);
+
+  const newAttachments: Attachment[] = [];
+
+  for (const file of filesToProcess) {
+
+    if (file.size > MAX_FILE_SIZE) {
+      alert(`El archivo "${file.name}" supera los 10MB permitidos.`);
+      continue;
     }
-    setAttachments((prev) => [...prev, ...newAttachments]);
-  };
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      alert(`El tipo de archivo "${file.name}" no está permitido.`);
+      continue;
+    }
+
+    try {
+
+      const uploaded = await uploadFile(file);
+
+      newAttachments.push({
+        id:
+          Date.now().toString(36) +
+          Math.random().toString(36).substring(2),
+
+        file_name: uploaded.file_name,
+        file_size: uploaded.file_size,
+        file_type: uploaded.file_type,
+        file_url: uploaded.file_url,
+        blob_path: uploaded.blob_path,
+      });
+
+    } catch (err) {
+      console.error(err);
+      alert(`Error subiendo ${file.name}`);
+    }
+  }
+
+  setAttachments((prev) => [...prev, ...newAttachments]);
+};
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -200,29 +218,79 @@ const saveDataLocalStorage = () => {
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.mail || !formData.titular || !formData.grupo || !formData.detalle) return;
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (
+    !formData.mail ||
+    !formData.titular ||
+    !formData.grupo ||
+    !formData.detalle
+  ) return;
+
+  try {
+
     setIsSubmitting(true);
+
     await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // 1. Crear ticket
     const ticket = await createTicket({
-  categoria: selectedCategoria,
-  subcategoria: selectedSubcategoria,
-  mail: formData.mail,
-  titular: formData.titular,
-  grupo: formData.grupo,
-  detalle: formData.detalle,
-});
+      categoria: selectedCategoria,
+      subcategoria: selectedSubcategoria,
+      mail: formData.mail,
+      titular: formData.titular,
+      grupo: formData.grupo,
+      detalle: formData.detalle,
+    });
+
+    // 2. Si hay archivos, crear reply con attachments
+    if (attachments.length > 0) {
+
+      await sendReply(
+        ticket.id,
+        "", // <- importante
+        attachments.map((a) => ({
+          file_name: a.file_name,
+          file_size: a.file_size,
+          file_type: a.file_type,
+          file_url: a.file_url,
+          blob_path: a.blob_path,
+        }))
+      );
+
+    }
+
     setActiveTicketId(ticket.id);
-    setIsSubmitting(false);
-    refreshTickets();
+
+    await refreshTickets();
+
     saveDataLocalStorage();
-    // Reset form para futuras creaciones
-    setFormData({ mail: "", titular: "", grupo: "", detalle: "" });
+
+    // Reset form
+    setFormData({
+      mail: "",
+      titular: "",
+      grupo: "",
+      detalle: "",
+    });
+
     setAttachments([]);
+
     setStep("chat");
-  };
-  
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert("Error creando ticket");
+
+  } finally {
+
+    setIsSubmitting(false);
+
+  }
+};
   const handleBackToCategory = async () => {
     setSelectedCategoria("");
     setSelectedSubcategoria("");
@@ -672,11 +740,13 @@ const saveDataLocalStorage = () => {
                       <div key={index} className="relative">
                         {file.file_type.startsWith("image/") ? (
                           <div className="relative">
-                            <img
-                              src={file.file_url}
-                              alt={file.file_name}
-                              className="w-20 h-16 object-cover rounded-lg border border-border-2"
-                            />
+                             <img
+  src={`/api/file?pathname=${encodeURIComponent(
+    file.blob_path!
+  )}`}
+  alt={file.file_name}
+  className="w-20 h-16 object-cover rounded-lg border border-border-2"
+/>
                             <button
                               type="button"
                               onClick={() => removeAttachment(index)}

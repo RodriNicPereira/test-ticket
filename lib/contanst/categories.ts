@@ -51,4 +51,7 @@ export const CATEGORIAS = {
     "No puedo acceder a la cuenta",
     "Fallas generales del sistema",
   ],
+  "Otros": [
+    "Otra consulta",
+  ],
 };

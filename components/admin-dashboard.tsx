@@ -373,12 +373,12 @@ useAdminTicketsChannel(async () => {
                       attachment.file_type.startsWith("image/") ? (
                         <a
                           key={index}
-                          href={attachment.file_url}
+                          href={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
                           download={attachment.file_name}
                           className="relative group"
                         >
                           <img 
-                            src={attachment.file_url} 
+                            src={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`} 
                             alt={attachment.file_name} 
                             className="w-24 h-[72px] object-cover rounded-lg border border-border hover:opacity-80 transition-opacity" 
                           />
@@ -386,7 +386,7 @@ useAdminTicketsChannel(async () => {
                       ) : (
                         <a
                           key={index}
-                          href={attachment.file_url}
+                          href={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
                           download={attachment.file_name}
                           className="flex items-center gap-2 px-3.5 py-2 bg-surface border border-border rounded-lg text-[13px] text-foreground hover:bg-surface-2 transition-colors"
                         >
@@ -427,12 +427,12 @@ useAdminTicketsChannel(async () => {
       attachment.file_type.startsWith("image/") ? (
         <a
           key={i}
-          href={attachment.file_url}
+          href={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
           target="_blank"
           rel="noopener noreferrer"
         >
           <img
-            src={attachment.file_url}
+            src={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
             alt={attachment.file_name}
             className="w-28 h-20 object-cover rounded-lg border border-border cursor-zoom-in"
           />
@@ -440,7 +440,7 @@ useAdminTicketsChannel(async () => {
       ) : (
         <a
           key={i}
-          href={attachment.file_url}
+          href={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
           className="flex items-center gap-2 px-3 py-2 bg-surface-2 rounded-lg text-[12px]"
         >
           <FileText className="h-4 w-4" />

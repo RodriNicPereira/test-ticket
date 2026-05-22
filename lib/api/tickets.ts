@@ -31,7 +31,8 @@ export interface Attachment {
   file_name: string;
   file_type: string;
   file_size: number;
-  file_url: string;
+  file_url: string,
+  blob_path?: string,
 }
 
 export async function getActiveTickets(): Promise<Ticket[]> {
@@ -49,6 +50,7 @@ export async function createTicket(input: {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
+    
   });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error);

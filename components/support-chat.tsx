@@ -19,6 +19,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
+import { uploadFile } from "@/lib/api/tickets";
 
 import { useCallback } from "react";
 import { useTicketChannel } from "@/lib/realtime/useTicketChannel";
@@ -36,7 +37,7 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
-  
+
 
   useEffect(() => {
   const loadTicket = async () => {
@@ -69,13 +70,11 @@ export function SupportChat({ ticketId, onBack }: SupportChatProps) {
     setIsSending(true);
 
     const attachments = await Promise.all(
-      files.map(async (file) => ({
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type,
-        file_url: await fileToDataUrl(file),
-      }))
-    );
+  files.map(async (file) => {
+    return await uploadFile(file);
+  })
+);
+
 
     await sendReply(
       ticketId,
@@ -133,12 +132,7 @@ useTicketChannel(ticketId, async () => {
     });
   };
 
-  const fileToDataUrl = (file: File): Promise<string> =>
-  new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.readAsDataURL(file);
-  });
+  
 
   const getClosedTimeRemaining = () => {
     if (!ticket?.closed_at) return null;
@@ -164,6 +158,7 @@ useTicketChannel(ticketId, async () => {
     );
   }
 
+ 
   return (
     <div className="min-h-screen flex flex-col items-center py-8 px-5">
       <div className="w-full max-w-[560px] bg-surface border border-border rounded-[20px] shadow-[0_32px_80px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col h-[85vh] max-h-[750px] relative">
@@ -258,7 +253,7 @@ useTicketChannel(ticketId, async () => {
                 {ticket?.ticket_attachments.map((att, index) => (
                   <div key={index} className="bg-surface-2 rounded-xl p-2 border border-border">
                     {att.file_type.startsWith("image/") ? (
-                      <img src={att.file_url} alt={att.file_name} className="rounded-lg max-h-40 object-cover" />
+                      <img src={`/api/file?pathname=${encodeURIComponent(att.blob_path)}`} alt={att.file_name} className="rounded-lg max-h-40 object-cover" />
                     ) : (
                       <div className="flex items-center gap-2 p-2">
                         <FileText className="h-5 w-5 text-muted-foreground" />
@@ -290,11 +285,11 @@ useTicketChannel(ticketId, async () => {
       att.file_type.startsWith("image/") ? (
         <a
           key={index}
-          href={att.file_url}
+          href={`/api/file?pathname=${encodeURIComponent(att.blob_path)}`}
           download={att.file_name}
         >
           <img
-            src={att.file_url}
+            src={`/api/file?pathname=${encodeURIComponent(att.blob_path)}`}
             alt={att.file_name}
             className="rounded-lg max-h-40 object-cover border border-border"
           />
@@ -302,7 +297,7 @@ useTicketChannel(ticketId, async () => {
       ) : (
         <a
           key={index}
-          href={att.file_url}
+          href={`/api/file?pathname=${encodeURIComponent(att.blob_path)}`}
           download={att.file_name}
           className="flex items-center gap-2 p-2 rounded-lg bg-surface-2 border border-border"
         >
@@ -343,6 +338,22 @@ useTicketChannel(ticketId, async () => {
           <div className="border-t border-border p-4 flex-shrink-0">
             <form onSubmit={handleSendMessage} className="flex items-center gap-1.5 xs:gap-2">
 
+              <input
+  ref={fileInputRef}
+  type="file"
+  multiple
+  accept="image/*,.pdf,.doc,.docx"
+  className="hidden"
+  onChange={(e) => {
+    if (!e.target.files) return;
+
+    setFiles((prev) => [
+  ...prev,
+  ...Array.from(e.target.files!)
+]);
+  }}
+/>
+
   <input
     value={message}
     onChange={(e) => setMessage(e.target.value)}
@@ -375,8 +386,7 @@ useTicketChannel(ticketId, async () => {
       border border-border-2
       rounded-lg
       text-muted-foreground
-    "
-  >
+    ">
     <Paperclip className="h-4 w-4" />
   </button>
 
