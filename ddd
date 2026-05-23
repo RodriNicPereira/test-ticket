@@ -382,9 +382,9 @@ export function AdminDashboard() {
                       <div className="flex flex-wrap gap-2">
                         {selectedTicket.ticket_attachments.map((attachment, index) =>
                           attachment.file_type.startsWith("image/") ? (
-                            <a key={index} href={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`} target="_blank" rel="noreferrer" className="block">
+                            <a key={index} href={attachment.file_url} target="_blank" rel="noreferrer" className="block">
                               <img
-                                src={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
+                                src={attachment.file_url}
                                 alt={attachment.file_name}
                                 className="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-md border border-border"
                               />
@@ -392,7 +392,7 @@ export function AdminDashboard() {
                           ) : (
                             <a
                               key={index}
-                              href={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
+                              href={attachment.file_url}
                               target="_blank"
                               rel="noreferrer"
                               className="flex items-center gap-2 px-3 py-2 bg-surface-2 border border-border rounded-md text-[12px] max-w-full"
@@ -426,7 +426,7 @@ export function AdminDashboard() {
                           {formatDate(reply.created_at)}
                         </span>
                         <div
-                          className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 rounded-lg text-[13px] leading-relaxed  break-words ${
+                          className={`max-w-[85%] sm:max-w-[75%] px-3 py-2 rounded-lg text-[13px] leading-relaxed ${
                             reply.is_admin
                               ? "bg-gold/10 border border-gold-dim text-foreground"
                               : "bg-surface-2 border border-border text-foreground"
@@ -437,9 +437,9 @@ export function AdminDashboard() {
                             <div className="mt-2 flex flex-wrap gap-2">
                               {reply.ticket_attachments?.map((attachment, i) =>
                                 attachment.file_type.startsWith("image/") ? (
-                                  <a key={i} href={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`} target="_blank" rel="noreferrer">
+                                  <a key={i} href={attachment.file_url} target="_blank" rel="noreferrer">
                                     <img
-                                      src={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
+                                      src={attachment.file_url}
                                       alt={attachment.file_name}
                                       className="h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-md border border-border"
                                     />
@@ -447,7 +447,7 @@ export function AdminDashboard() {
                                 ) : (
                                   <a
                                     key={i}
-                                    href={`/api/file?pathname=${encodeURIComponent(attachment.blob_path)}`}
+                                    href={attachment.file_url}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="flex items-center gap-2 px-2 py-1 bg-surface border border-border rounded-md text-[11px] max-w-full"
@@ -506,7 +506,7 @@ export function AdminDashboard() {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between gap-2 flex-wrap" >
+                    <div className="flex items-center justify-between gap-2">
                       <button
                         onClick={handleCloseTicket}
                         className="px-2.5 sm:px-4 py-2 sm:py-2.5 border border-red-500 text-red-500 rounded-lg text-[12px] sm:text-[13px] bg-transparent hover:text-gold hover:border-gold-dim transition-all whitespace-nowrap"
