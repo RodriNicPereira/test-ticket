@@ -458,12 +458,12 @@ const handleSubmit = async (e: React.FormEvent) => {
               {Object.entries(CATEGORIAS).map(([categoria, subcategorias]) => {
                 const isExpanded = expandedCategories.includes(categoria);
                 return (
-                  <div key={categoria} className="border border-border-2 rounded-lg overflow-hidden bg-surface-2">
+                  <div key={categoria} className="border border-border-2 hover:border-gold rounded-lg overflow-hidden bg-surface-2">
                     <button
                       onClick={() => toggleCategory(categoria)}
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-3 transition-colors"
-                    >
-                      <span className="font-semibold text-[14px] text-foreground">{categoria}</span>
+                      className="w-full px-5 py-3 text-left text-[13px] text-white hover:text-gold transition-colors flex items-center justify-between group"
+                          >
+                      <span className="font-semibold text-[14px]">{categoria}</span>
                       <ChevronRight
                         className={`h-4 w-4 text-muted-foreground transition-transform ${
                           isExpanded ? "rotate-90" : ""
@@ -726,7 +726,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                     className="hidden"
                   />
                   <div className="w-10 h-10 border border-border-2 rounded-lg flex items-center justify-center mx-auto mb-2.5 bg-surface-3">
-                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <Upload className="h-5 w-5 text-muted-foreground hover:text-gold" />
                   </div>
                   <p className="text-sm font-medium text-[#C8C4BC] mb-1">
                     Hacé clic o arrastrá archivos aquí
