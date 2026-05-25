@@ -367,6 +367,8 @@ useTicketChannel(ticketId, async () => {
       border border-border-2
       rounded-lg
       text-muted-foreground
+      hover:text-gold
+      hover:border-gold
     ">
     <Paperclip className="h-4 w-4" />
   </button>
@@ -378,11 +380,12 @@ useTicketChannel(ticketId, async () => {
       shrink-0
       px-3 xs:px-4
       py-2.5
-      bg-gradient-to-br from-gold to-[#C8881A]
+      bg-gold/70
       rounded-lg
       text-black
       flex items-center justify-center
       disabled:opacity-35
+      hover:bg-gold
     "
   >
     <Send className="h-4 w-4" />
