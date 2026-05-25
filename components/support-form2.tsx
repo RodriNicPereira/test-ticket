@@ -361,7 +361,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
               <button
                 onClick={handleNewTicket}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-br from-gold to-[#C8881A] rounded-lg text-sm font-bold text-black hover:opacity-90 hover:-translate-y-px active:translate-y-0 transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 text-gold border border-gold hover:bg-gradient-to-br from-gold to-[#C8881A] rounded-lg text-sm font-bold hover:text-black hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
                 Nuevo ticket
@@ -403,7 +403,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                       </span>
                       <span className="inline-flex items-center gap-1 text-gold opacity-70 group-hover:opacity-100 transition-opacity">
                         <MessageSquare className="h-3 w-3" />
-                        {ticket.ticket_replies?.length} {ticket.ticket_replies?.length === 1 ? "mensaje" : "mensajes"}
+                        {ticket.ticket_replies?.length} {ticket.ticket_replies?.length === 1 ? "mensaje" : "mensajes totales"}
                         <ChevronRight className="h-3.5 w-3.5" />
                       </span>
                     </div>
@@ -447,9 +447,9 @@ const handleSubmit = async (e: React.FormEvent) => {
             {hasTickets && (
               <button
                 onClick={() => setStep("list")}
-                className="inline-flex items-center gap-1.5 mb-5 text-xs text-muted-foreground hover:text-gold transition-colors"
+                className="inline-flex items-center gap-1.5 mb-5 text-sm text-muted-foreground hover:text-gold transition-colors"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-3.5 w-3.5 text-gold" />
                 Volver a mis tickets
               </button>
             )}
@@ -780,7 +780,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <button
                   type="button"
                   onClick={handleBackToCategory}
-                  className="px-5 py-3 bg-transparent border border-border-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-surface-2 hover:border-border-2 transition-all"
+                  className=" hover:border-gold px-5 py-3 bg-transparent border border-border-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-surface-2 hover:border-border-2 transition-all"
                 >
                   <ChevronLeft className="h-4 w-4 inline mr-1" />
                   Atrás

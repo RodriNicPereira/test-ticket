@@ -1,19 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createAdminSession } from '@/lib/auth/admin';
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminSession } from "@/lib/auth/admin";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
-  const { password } = await req.json();
+  try {
+    const { password } = await req.json();
 
-  if (password !== process.env.ADMIN_PASSWORD) {
+console.log(process.env.ADMIN_PASSWORD_HASH);
+
+    const isValid = await bcrypt.compare(
+      password,
+      process.env.ADMIN_PASSWORD_HASH!
+    );
+
+    if (!isValid) {
+      return NextResponse.json(
+        { error: "Contraseña inválida" },
+        { status: 401 }
+      );
+    }
+
+    await createAdminSession();
+
+    return NextResponse.json({
+      ok: true,
+    });
+  } catch (error) {
     return NextResponse.json(
-      { error: 'Contraseña inválida' },
-      { status: 401 }
+      { error: "Error interno" },
+      { status: 500 }
     );
   }
-
-  await createAdminSession();
-
-  return NextResponse.json({
-    ok: true,
-  });
 }
