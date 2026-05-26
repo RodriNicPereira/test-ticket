@@ -16,8 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'Soporte Técnico — RECASH',
-  description: 'Centro de soporte técnico RECASH',
-  generator: 'v0.app',
+  description: 'Soporte técnico RECASH',
   icons: {
     icon: [
       {

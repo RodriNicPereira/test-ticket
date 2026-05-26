@@ -137,9 +137,9 @@ useTicketChannel(ticketId, async () => {
   const getClosedTimeRemaining = () => {
     if (!ticket?.closed_at) return null;
     const closedDate = new Date(ticket.closed_at);
-    const expiryDate = new Date(closedDate.getTime() + 1000 * 20); // 1 minuto cambiar  2 * 24 * 60 * 60 * 1000 para 2 dias
+    const expiryDate = new Date(closedDate.getTime() + 2 * 24 * 60 * 60 * 1000); // 1000*20 = 20 segundos cambiar a 2 * 24 * 60 * 60 * 1000 para 2 dias
     const now = new Date();
-    const hoursRemaining = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / (1000 * 20)));
+    const hoursRemaining = Math.max(0, Math.floor((expiryDate.getTime() - now.getTime()) / (2 * 24 * 60 * 60 * 1000)));
     if (hoursRemaining > 24) {
       const days = Math.floor(hoursRemaining / 24);
       return `${days} día${days > 1 ? "s" : ""}`;
