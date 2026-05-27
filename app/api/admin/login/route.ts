@@ -32,3 +32,20 @@ console.log(process.env.ADMIN_PASSWORD_HASH);
     );
   }
 }
+
+/*export async function POST(req: NextRequest) {
+  const { password } = await req.json();
+
+  console.log("PASSWORD:", password);
+  console.log("HASH:", process.env.ADMIN_PASSWORD_HASH);
+
+  const isValid = await bcrypt.compare(
+    password,
+    process.env.ADMIN_PASSWORD_HASH!
+  );
+
+  console.log("VALID:", isValid);
+
+  return NextResponse.json({ isValid });
+}
+*/

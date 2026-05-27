@@ -13,7 +13,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import Image from "next/image";
-import { SupportChat } from "./support-chat";
+import { SupportChat } from "./support-chat/support-chat";
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;

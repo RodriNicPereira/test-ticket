@@ -26,7 +26,7 @@ import {
    ArrowLeft,
 } from "lucide-react";
 import Image from "next/image";
-import { SupportChat } from "./support-chat";
+import { SupportChat } from "./support-chat/support-chat";
 import { CATEGORIAS } from "@/lib/contanst/categories";
 
 
