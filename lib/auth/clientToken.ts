@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 
 const SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 const COOKIE_NAME = 'client_token';
-const MAX_AGE = 60 * 60 * 24 * 30; // 30 días
+const MAX_AGE = 60 * 60 * 24 * 365 * 10; // 10 años
 
 export async function ensureClient(): Promise<string> {
   const existing = await getClientIdFromToken();
@@ -23,9 +23,9 @@ export async function ensureClient(): Promise<string> {
 
 export async function setClientToken(clientId: string) {
   const token = await new SignJWT({ clientId })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('30d')
-    .sign(SECRET);
+  .setProtectedHeader({ alg: "HS256" })
+  .setExpirationTime("10y")
+  .sign(SECRET);
 
   (await cookies()).set(COOKIE_NAME, token, {
     httpOnly: true,
